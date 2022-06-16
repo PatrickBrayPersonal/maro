@@ -2,7 +2,7 @@
 # Licensed under the MIT license.
 
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, cast, Dict, Optional, Tuple
 
 import torch
 
@@ -164,7 +164,7 @@ class SoftActorCriticOps(AbsTrainOps):
 
 class SoftActorCriticTrainer(SingleAgentTrainer):
     def __init__(self, name: str, params: SoftActorCriticParams) -> None:
-        super(SoftActorCriticTrainer, self).__init__(name, params)
+        super(SoftActorCriticTrainer, self).__init__(name)
         self._params = params
         self._qnet_version = self._target_qnet_version = 0
 
@@ -174,8 +174,8 @@ class SoftActorCriticTrainer(SingleAgentTrainer):
         self._ops = self.get_ops()
         self._replay_memory = RandomReplayMemory(
             capacity=self._params.replay_memory_capacity,
-            state_dim=self._ops.policy_state_dim,
-            action_dim=self._ops.policy_action_dim,
+            state_dim=cast(int, self._ops.policy_state_dim),
+            action_dim=cast(int, self._ops.policy_action_dim),
             random_overwrite=self._params.random_overwrite,
         )
 
@@ -225,7 +225,7 @@ class SoftActorCriticTrainer(SingleAgentTrainer):
         )
 
     def _get_batch(self, batch_size: int = None) -> TransitionBatch:
-        return self._replay_memory.sample(batch_size if batch_size is not None else self._batch_size)
+        return self._replay_memory.sample(batch_size if batch_size is not None else self._params.batch_size)
 
     def _try_soft_update_target(self) -> None:
         """Soft update the target policy and target critic."""

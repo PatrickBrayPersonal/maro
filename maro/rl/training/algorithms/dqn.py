@@ -2,7 +2,7 @@
 # Licensed under the MIT license.
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import cast, Dict
 
 import torch
 
@@ -156,7 +156,7 @@ class DQNTrainer(SingleAgentTrainer):
     """
 
     def __init__(self, name: str, params: DQNParams) -> None:
-        super(DQNTrainer, self).__init__(name, params)
+        super(DQNTrainer, self).__init__(name)
         self._params = params
         self._q_net_version = self._target_q_net_version = 0
 
@@ -164,8 +164,8 @@ class DQNTrainer(SingleAgentTrainer):
         self._ops = self.get_ops()
         self._replay_memory = RandomReplayMemory(
             capacity=self._params.replay_memory_capacity,
-            state_dim=self._ops.policy_state_dim,
-            action_dim=self._ops.policy_action_dim,
+            state_dim=cast(int, self._ops.policy_state_dim),
+            action_dim=cast(int, self._ops.policy_action_dim),
             random_overwrite=self._params.random_overwrite,
         )
 
@@ -181,7 +181,7 @@ class DQNTrainer(SingleAgentTrainer):
         )
 
     def _get_batch(self, batch_size: int = None) -> TransitionBatch:
-        return self._replay_memory.sample(batch_size if batch_size is not None else self._batch_size)
+        return self._replay_memory.sample(batch_size if batch_size is not None else self._params.batch_size)
 
     def train_step(self) -> None:
         assert isinstance(self._ops, DQNOps)

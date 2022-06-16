@@ -64,13 +64,10 @@ class AbsTrainer(object, metaclass=ABCMeta):
 
     Args:
         name (str): Name of the trainer.
-        params (TrainerParams): Trainer's parameters.
     """
 
-    def __init__(self, name: str, params: TrainerParams) -> None:
+    def __init__(self, name: str) -> None:
         self._name = name
-        self._params = params
-        self._batch_size = self._params.batch_size
         self._agent2policy: Dict[Any, str] = {}
         self._proxy_address: Optional[Tuple[str, int]] = None
         self._logger = None
@@ -164,10 +161,10 @@ class AbsTrainer(object, metaclass=ABCMeta):
 class SingleAgentTrainer(AbsTrainer, metaclass=ABCMeta):
     """Policy trainer that trains only one policy."""
 
-    def __init__(self, name: str, params: TrainerParams) -> None:
-        super(SingleAgentTrainer, self).__init__(name, params)
+    def __init__(self, name: str) -> None:
+        super(SingleAgentTrainer, self).__init__(name)
         self._policy: Optional[RLPolicy] = None
-        self._ops: Optional[AbsTrainOps] = None
+        self._ops: Union[AbsTrainOps, RemoteOps, None] = None
         self._replay_memory: Optional[ReplayMemory] = None
 
     @property
@@ -271,8 +268,8 @@ class SingleAgentTrainer(AbsTrainer, metaclass=ABCMeta):
 class MultiAgentTrainer(AbsTrainer, metaclass=ABCMeta):
     """Policy trainer that trains multiple policies."""
 
-    def __init__(self, name: str, params: TrainerParams) -> None:
-        super(MultiAgentTrainer, self).__init__(name, params)
+    def __init__(self, name: str) -> None:
+        super(MultiAgentTrainer, self).__init__(name)
         self._policy_names: List[str] = []
         self._policy_dict: Dict[str, RLPolicy] = {}
         self._ops_dict: Dict[str, AbsTrainOps] = {}

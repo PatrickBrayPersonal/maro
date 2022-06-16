@@ -2,7 +2,7 @@
 # Licensed under the MIT license.
 
 from dataclasses import dataclass
-from typing import Callable, Dict
+from typing import Callable, cast, Dict, Optional
 
 import torch
 
@@ -30,10 +30,10 @@ class DDPGParams(TrainerParams):
     min_num_to_trigger_training (int, default=0): Minimum number required to start training.
     """
 
-    get_q_critic_net_func: Callable[[], QNet] = None
+    get_q_critic_net_func: Optional[Callable[[], QNet]] = None
     num_epochs: int = 1
     update_target_every: int = 5
-    q_value_loss_cls: Callable = None
+    q_value_loss_cls: Optional[Callable] = None
     soft_update_coef: float = 1.0
     random_overwrite: bool = False
     min_num_to_trigger_training: int = 0
@@ -71,7 +71,7 @@ class DDPGOps(AbsTrainOps):
 
         assert isinstance(self._policy, ContinuousRLPolicy)
 
-        self._target_policy = clone(self._policy)
+        self._target_policy: ContinuousRLPolicy = clone(self._policy)
         self._target_policy.set_name(f"target_{self._policy.name}")
         self._target_policy.eval()
         self._q_critic_net = get_q_critic_net_func()
@@ -224,7 +224,7 @@ class DDPGTrainer(SingleAgentTrainer):
     """
 
     def __init__(self, name: str, params: DDPGParams) -> None:
-        super(DDPGTrainer, self).__init__(name, params)
+        super(DDPGTrainer, self).__init__(name)
         self._params = params
         self._policy_version = self._target_policy_version = 0
         self._memory_size = 0
@@ -233,8 +233,8 @@ class DDPGTrainer(SingleAgentTrainer):
         self._ops = self.get_ops()
         self._replay_memory = RandomReplayMemory(
             capacity=self._params.replay_memory_capacity,
-            state_dim=self._ops.policy_state_dim,
-            action_dim=self._ops.policy_action_dim,
+            state_dim=cast(int, self._ops.policy_state_dim),
+            action_dim=cast(int, self._ops.policy_action_dim),
             random_overwrite=self._params.random_overwrite,
         )
 
@@ -250,7 +250,7 @@ class DDPGTrainer(SingleAgentTrainer):
         )
 
     def _get_batch(self, batch_size: int = None) -> TransitionBatch:
-        return self._replay_memory.sample(batch_size if batch_size is not None else self._batch_size)
+        return self._replay_memory.sample(batch_size if batch_size is not None else self._params.batch_size)
 
     def train_step(self) -> None:
         assert isinstance(self._ops, DDPGOps)

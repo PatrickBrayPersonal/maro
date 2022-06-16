@@ -295,7 +295,7 @@ class DiscreteMADDPGTrainer(MultiAgentTrainer):
     """
 
     def __init__(self, name: str, params: DiscreteMADDPGParams) -> None:
-        super(DiscreteMADDPGTrainer, self).__init__(name, params)
+        super(DiscreteMADDPGTrainer, self).__init__(name)
         self._params = params
         self._ops_params = self._params.extract_ops_params()
         self._state_dim = params.get_q_critic_net_func().state_dim
@@ -391,7 +391,7 @@ class DiscreteMADDPGTrainer(MultiAgentTrainer):
             return DiscreteMADDPGOps(name=name, **ops_params)
 
     def _get_batch(self, batch_size: int = None) -> MultiTransitionBatch:
-        return self._replay_memory.sample(batch_size if batch_size is not None else self._batch_size)
+        return self._replay_memory.sample(batch_size if batch_size is not None else self._params.batch_size)
 
     def train_step(self) -> None:
         assert not self._params.shared_critic or isinstance(self._critic_ops, DiscreteMADDPGOps)

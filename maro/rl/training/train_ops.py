@@ -3,8 +3,9 @@
 
 import inspect
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
+import torch
 import zmq
 from zmq.asyncio import Context, Poller
 
@@ -35,7 +36,7 @@ class AbsTrainOps(object, metaclass=ABCMeta):
 
         self._parallelism = parallelism
 
-        self._device = None
+        self._device: Optional[torch.device] = None
 
     @property
     def name(self) -> str:

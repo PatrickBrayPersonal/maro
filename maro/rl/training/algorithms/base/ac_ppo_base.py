@@ -3,7 +3,7 @@
 
 from abc import ABCMeta
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, cast, Dict, Optional, Tuple
 
 import numpy as np
 import torch
@@ -248,15 +248,15 @@ class ACBasedTrainer(SingleAgentTrainer):
     """
 
     def __init__(self, name: str, params: ACBasedParams) -> None:
-        super(ACBasedTrainer, self).__init__(name, params)
+        super(ACBasedTrainer, self).__init__(name)
         self._params = params
 
     def build(self) -> None:
         self._ops = self.get_ops()
         self._replay_memory = FIFOReplayMemory(
             capacity=self._params.replay_memory_capacity,
-            state_dim=self._ops.policy_state_dim,
-            action_dim=self._ops.policy_action_dim,
+            state_dim=cast(int, self._ops.policy_state_dim),
+            action_dim=cast(int, self._ops.policy_action_dim),
         )
 
     def _preprocess_batch(self, transition_batch: TransitionBatch) -> TransitionBatch:
