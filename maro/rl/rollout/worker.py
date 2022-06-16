@@ -54,18 +54,20 @@ class RolloutWorker(AbsWorker):
             req = bytes_to_pyobj(msg[-1])
             assert isinstance(req, dict)
             assert req["type"] in {"sample", "eval", "set_policy_state", "post_collect", "post_evaluate"}
-            if req["type"] == "sample":
-                result = self._env_sampler.sample(policy_state=req["policy_state"], num_steps=req["num_steps"])
-            elif req["type"] == "eval":
-                result = self._env_sampler.eval(policy_state=req["policy_state"])
-            elif req["type"] == "set_policy_state":
-                self._env_sampler.set_policy_state(policy_state_dict=req["policy_state"])
-                result = True
-            elif req["type"] == "post_collect":
-                self._env_sampler.post_collect(info_list=req["info_list"], ep=req["index"])
-                result = True
-            else:
-                self._env_sampler.post_evaluate(info_list=req["info_list"], ep=req["index"])
-                result = True
 
-            self._stream.send(pyobj_to_bytes({"result": result, "index": req["index"]}))
+            if req["type"] in ("sample", "eval"):
+                if req["type"] == "sample":
+                    result = self._env_sampler.sample(policy_state=req["policy_state"], num_steps=req["num_steps"])
+                else:
+                    result = self._env_sampler.eval(policy_state=req["policy_state"])
+                self._stream.send(pyobj_to_bytes({"result": result, "index": req["index"]}))
+            elif req["type"] in ("set_policy_state", "post_collect", "post_evaluate"):
+                if req["type"] == "set_policy_state":
+                    self._env_sampler.set_policy_state(policy_state_dict=req["policy_state"])
+                elif req["type"] == "post_collect":
+                    self._env_sampler.post_collect(info_list=req["info_list"], ep=req["index"])
+                else:
+                    self._env_sampler.post_evaluate(info_list=req["info_list"], ep=req["index"])
+                self._stream.send(pyobj_to_bytes({"result": True, "index": req["index"]}))
+            else:
+                raise ValueError(f"Unrecognized method: {req['type']}")

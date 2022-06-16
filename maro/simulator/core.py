@@ -89,7 +89,7 @@ class Env(AbsEnv):
 
         self._streamit_episode = 0
 
-    def step(self, action) -> Tuple[Optional[dict], Optional[List[object]], Optional[bool]]:
+    def step(self, action) -> Tuple[Optional[dict], Optional[List[object]], bool]:
         """Push the environment to next step with action.
 
         Args:

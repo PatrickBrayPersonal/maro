@@ -14,7 +14,7 @@ from maro.rl.policy import AbsPolicy, RLPolicy
 from maro.rl.rollout import ExpElement
 from maro.rl.utils import TransitionBatch
 from maro.rl.utils.objects import FILE_SUFFIX
-from maro.utils import LoggerV2
+from maro.utils import DummyLogger, LoggerV2
 
 from .replay_memory import ReplayMemory
 from .train_ops import AbsTrainOps, RemoteOps
@@ -80,8 +80,8 @@ class AbsTrainer(object, metaclass=ABCMeta):
     def agent_num(self) -> int:
         return len(self._agent2policy)
 
-    def register_logger(self, logger: LoggerV2) -> None:
-        self._logger = logger
+    def register_logger(self, logger: LoggerV2 = None) -> None:
+        self._logger = logger if logger is not None else DummyLogger()
 
     def register_agent2policy(self, agent2policy: Dict[Any, str], policy_trainer_mapping: Dict[str, str]) -> None:
         """Register the agent to policy dict that correspond to the current trainer.

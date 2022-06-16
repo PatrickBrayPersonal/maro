@@ -62,12 +62,13 @@ class ContinuousRLPolicy(RLPolicy):
         )
 
         self._lbounds, self._ubounds = _parse_action_range(self.action_dim, action_range)
-        assert self._lbounds is not None and self._ubounds is not None
 
         self._policy_net = policy_net
 
     @property
     def action_bounds(self) -> Tuple[List[float], List[float]]:
+        assert self._lbounds is not None
+        assert self._ubounds is not None
         return self._lbounds, self._ubounds
 
     @property

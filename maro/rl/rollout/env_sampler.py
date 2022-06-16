@@ -47,16 +47,16 @@ class AbsAgentWrapper(object, metaclass=ABCMeta):
 
     def choose_actions(
         self,
-        state_by_agent: Dict[Any, Union[np.ndarray, List[object]]],
-    ) -> Dict[Any, Union[np.ndarray, List[object]]]:
+        state_by_agent: Dict[Any, Union[np.ndarray, list]],
+    ) -> Dict[Any, Union[np.ndarray, list]]:
         """Choose action according to the given (observable) states of all agents.
 
         Args:
-            state_by_agent (Dict[Any, Union[np.ndarray, List[object]]]): Dictionary containing each agent's states.
+            state_by_agent (Dict[Any, Union[np.ndarray, list]]): Dictionary containing each agent's states.
                 If the policy is a `RLPolicy`, its state is a Numpy array. Otherwise, its state is a list of objects.
 
         Returns:
-            actions (Dict[Any, Union[np.ndarray, List[object]]]): Dict that contains the action for all agents.
+            actions (Dict[Any, Union[np.ndarray, list]]): Dict that contains the action for all agents.
                 If the policy is a `RLPolicy`, its action is a Numpy array. Otherwise, its action is a list of objects.
         """
         self.switch_to_eval_mode()
@@ -67,8 +67,8 @@ class AbsAgentWrapper(object, metaclass=ABCMeta):
     @abstractmethod
     def _choose_actions_impl(
         self,
-        state_by_agent: Dict[Any, Union[np.ndarray, List[object]]],
-    ) -> Dict[Any, Union[np.ndarray, List[object]]]:
+        state_by_agent: Dict[Any, Union[np.ndarray, list]],
+    ) -> Dict[Any, Union[np.ndarray, list]]:
         """Implementation of `choose_actions`."""
         raise NotImplementedError
 
@@ -91,15 +91,15 @@ class AbsAgentWrapper(object, metaclass=ABCMeta):
 class SimpleAgentWrapper(AbsAgentWrapper):
     def __init__(
         self,
-        policy_dict: Dict[str, RLPolicy],  # {policy_name: RLPolicy}
+        policy_dict: Dict[str, AbsPolicy],  # {policy_name: RLPolicy}
         agent2policy: Dict[Any, str],  # {agent_name: policy_name}
     ) -> None:
         super(SimpleAgentWrapper, self).__init__(policy_dict=policy_dict, agent2policy=agent2policy)
 
     def _choose_actions_impl(
         self,
-        state_by_agent: Dict[Any, Union[np.ndarray, List[object]]],
-    ) -> Dict[Any, Union[np.ndarray, List[object]]]:
+        state_by_agent: Dict[Any, Union[np.ndarray, list]],
+    ) -> Dict[Any, Union[np.ndarray, list]]:
         # Aggregate states by policy
         states_by_policy = collections.defaultdict(list)  # {str: list of np.ndarray}
         agents_by_policy = collections.defaultdict(list)  # {str: list of str}
@@ -108,15 +108,15 @@ class SimpleAgentWrapper(AbsAgentWrapper):
             states_by_policy[policy_name].append(state)
             agents_by_policy[policy_name].append(agent_name)
 
-        action_dict = {}
+        action_dict: dict = {}
         for policy_name in agents_by_policy:
             policy = self._policy_dict[policy_name]
 
             if isinstance(policy, RLPolicy):
                 states = np.vstack(states_by_policy[policy_name])  # np.ndarray
             else:
-                states = states_by_policy[policy_name]  # List[object]
-            actions = policy.get_actions(states)  # np.ndarray or List[object]
+                states = states_by_policy[policy_name]  # list
+            actions = policy.get_actions(states)  # np.ndarray or list
             action_dict.update(zip(agents_by_policy[policy_name], actions))
 
         return action_dict
@@ -184,7 +184,7 @@ class ExpElement:
             Contents (Dict[str, ExpElement]): A dict that contains the ExpElements of all trainers. The key of this
                 dict is the trainer name.
         """
-        ret = collections.defaultdict(
+        ret: Dict[str, ExpElement] = collections.defaultdict(
             lambda: ExpElement(
                 tick=self.tick,
                 state=self.state,
@@ -257,8 +257,8 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
 
         self._agent_wrapper_cls = agent_wrapper_cls
 
-        self._event = None
-        self._end_of_episode = True
+        self._event: Optional[list] = None
+        self._end_of_episode: bool = True
         self._state: Optional[np.ndarray] = None
         self._agent_state_dict: Dict[Any, np.ndarray] = {}
 
@@ -266,7 +266,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
         self._agent_last_index: Dict[Any, int] = {}  # Index of last occurrence of agent in self._trans_cache
         self._reward_eval_delay = reward_eval_delay
 
-        self._info = {}
+        self._info: dict = {}
 
         assert self._reward_eval_delay is None or self._reward_eval_delay >= 0
 
@@ -291,6 +291,14 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
             [policy_name in self._rl_policy_dict for policy_name in self._trainable_policies],
         ), "All trainable policies must be RL policies!"
 
+    @property
+    def env(self) -> Env:
+        assert self._env is not None
+        return self._env
+
+    def set_env(self, env: Env) -> None:
+        self._env = env
+
     def assign_policy_to_device(self, policy_name: str, device: torch.device) -> None:
         self._rl_policy_dict[policy_name].to_device(device)
 
@@ -298,7 +306,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
         self,
         event: object,
         tick: int = None,
-    ) -> Tuple[Optional[object], Dict[Any, Union[np.ndarray, List[object]]]]:
+    ) -> Tuple[Optional[object], Dict[Any, Union[np.ndarray, list]]]:
         """Get the global and individual agents' states.
 
         Args:
@@ -307,7 +315,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
 
         Returns:
             Global state (Optional[object])
-            Dict of agent states (Dict[Any, Union[np.ndarray, List[object]]]). If the policy is a `RLPolicy`,
+            Dict of agent states (Dict[Any, Union[np.ndarray, list]]). If the policy is a `RLPolicy`,
                 its state is a Numpy array. Otherwise, its state is a list of objects.
         """
         global_state, agent_state_dict = self._get_global_and_agent_state_impl(event, tick)
@@ -323,19 +331,19 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
         self,
         event: object,
         tick: int = None,
-    ) -> Tuple[Union[None, np.ndarray, List[object]], Dict[Any, Union[np.ndarray, List[object]]]]:
+    ) -> Tuple[Union[None, np.ndarray, list], Dict[Any, Union[np.ndarray, list]]]:
         raise NotImplementedError
 
     @abstractmethod
     def _translate_to_env_action(
         self,
-        action_dict: Dict[Any, Union[np.ndarray, List[object]]],
+        action_dict: Dict[Any, Union[np.ndarray, list]],
         event: object,
     ) -> Dict[Any, object]:
         """Translate model-generated actions into an object that can be executed by the env.
 
         Args:
-            action_dict (Dict[Any, Union[np.ndarray, List[object]]]): Action for all agents. If the policy is a
+            action_dict (Dict[Any, Union[np.ndarray, list]]): Action for all agents. If the policy is a
                 `RLPolicy`, its (input) action is a Numpy array. Otherwise, its (input) action is a list of objects.
             event (object): Decision event.
 
@@ -359,7 +367,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
         raise NotImplementedError
 
     def _step(self, actions: Optional[list]) -> None:
-        _, self._event, self._end_of_episode = self._env.step(actions)
+        _, self._event, self._end_of_episode = self.env.step(actions)
         self._state, self._agent_state_dict = (
             (None, {}) if self._end_of_episode else self._get_global_and_agent_state(self._event)
         )
@@ -397,7 +405,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
                 self._agent_last_index[agent_name] = cur_index
 
     def _reset(self) -> None:
-        self._env.reset()
+        self.env.reset()
         self._info.clear()
         self._trans_cache.clear()
         self._agent_last_index.clear()
@@ -419,7 +427,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
             A dict that contains the collected experiences and additional information.
         """
         # Init the env
-        self._env = self._learn_env
+        self.set_env(self._learn_env)
         if self._end_of_episode:
             self._reset()
 
@@ -437,7 +445,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
 
             # Store experiences in the cache
             cache_element = CacheElement(
-                tick=self._env.tick,
+                tick=self.env.tick,
                 event=self._event,
                 state=self._state,
                 agent_state_dict=self._select_trainable_agents(self._agent_state_dict),
@@ -460,7 +468,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
             steps_to_go -= 1
         self._append_cache_element(None)
 
-        tick_bound = self._env.tick - (0 if self._reward_eval_delay is None else self._reward_eval_delay)
+        tick_bound = self.env.tick - (0 if self._reward_eval_delay is None else self._reward_eval_delay)
         experiences: List[ExpElement] = []
         while len(self._trans_cache) > 0 and self._trans_cache[0].tick <= tick_bound:
             cache_element = self._trans_cache.pop(0)
@@ -503,7 +511,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
         return loaded
 
     def eval(self, policy_state: Dict[str, dict] = None) -> dict:
-        self._env = self._test_env
+        self.set_env(self._test_env)
         self._reset()
         if policy_state is not None:
             self.set_policy_state(policy_state)
@@ -515,7 +523,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
 
             # Store experiences in the cache
             cache_element = CacheElement(
-                tick=self._env.tick,
+                tick=self.env.tick,
                 event=self._event,
                 state=self._state,
                 agent_state_dict=self._select_trainable_agents(self._agent_state_dict),
@@ -538,7 +546,7 @@ class AbsEnvSampler(object, metaclass=ABCMeta):
             self._append_cache_element(cache_element)
         self._append_cache_element(None)
 
-        tick_bound = self._env.tick - (0 if self._reward_eval_delay is None else self._reward_eval_delay)
+        tick_bound = self.env.tick - (0 if self._reward_eval_delay is None else self._reward_eval_delay)
         while len(self._trans_cache) > 0 and self._trans_cache[0].tick <= tick_bound:
             cache_element = self._trans_cache.pop(0)
             if self._reward_eval_delay is not None:

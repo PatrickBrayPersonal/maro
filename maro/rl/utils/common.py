@@ -7,14 +7,14 @@ import socket
 from typing import List, Optional
 
 
-def get_env(var_name: str, required: bool = True, default: object = None) -> str:
+def get_env(var_name: str, required: bool = True, default: str = None) -> str:
     """Wrapper for os.getenv() that includes a check for mandatory environment variables.
 
     Args:
         var_name (str): Variable name.
         required (bool, default=True): Flag indicating whether the environment variable in questions is required.
             If this is true and the environment variable is not present in ``os.environ``, a ``KeyError`` is raised.
-        default (object, default=None): Default value for the environment variable if it is missing in ``os.environ``
+        default (str, default=None): Default value for the environment variable if it is missing in ``os.environ``
             and ``required`` is false. Ignored if ``required`` is True.
 
     Returns:
@@ -23,9 +23,10 @@ def get_env(var_name: str, required: bool = True, default: object = None) -> str
     if var_name not in os.environ:
         if required:
             raise KeyError(f"Missing environment variable: {var_name}")
+        assert default is not None, f"Default value is missing"
         return default
 
-    return os.getenv(var_name)
+    return str(os.getenv(var_name))
 
 
 def int_or_none(val: Optional[str]) -> Optional[int]:
@@ -52,7 +53,7 @@ def bytes_to_string(bytes_: bytes) -> str:
     return bytes_.decode(DEFAULT_MSG_ENCODING)
 
 
-def pyobj_to_bytes(pyobj) -> bytes:
+def pyobj_to_bytes(pyobj: object) -> bytes:
     return pickle.dumps(pyobj)
 
 
