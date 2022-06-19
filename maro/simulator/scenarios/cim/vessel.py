@@ -3,11 +3,12 @@
 
 
 from math import floor
+from typing import Any, Optional
 
 from maro.backends.frame import NodeAttribute, NodeBase, node
 
 
-def gen_vessel_definition(stop_nums: tuple):
+def gen_vessel_definition(stop_nums: tuple) -> Any:
     @node("vessels")
     class Vessel(NodeBase):
         # The capacity of vessel for transferring containers.
@@ -44,16 +45,16 @@ def gen_vessel_definition(stop_nums: tuple):
         future_stop_list = NodeAttribute("i", stop_nums[1])
         future_stop_tick_list = NodeAttribute("i", stop_nums[1])
 
-        def __init__(self):
-            self._name = None
-            self._capacity = None
-            self._total_space = None
-            self._container_volume = None
-            self._route_idx = None
-            self._empty = None
+        def __init__(self) -> None:
+            self._name: Optional[str] = None
+            self._capacity: Optional[int] = None
+            self._total_space: Optional[int] = None
+            self._container_volume: Optional[float] = None
+            self._route_idx: Optional[int] = None
+            self._empty: Optional[int] = None
 
         @property
-        def name(self) -> str:
+        def name(self) -> Optional[str]:
             """str: Name of vessel (from config)."""
             return self._name
 
@@ -62,7 +63,7 @@ def gen_vessel_definition(stop_nums: tuple):
             """int: Index of vessel."""
             return self.index
 
-        def set_init_state(self, name: str, container_volume: float, capacity: int, route_idx: int, empty: int):
+        def set_init_state(self, name: str, container_volume: float, capacity: int, route_idx: int, empty: int) -> None:
             """Initialize vessel info that will be used after frame reset.
 
             Args:
@@ -82,13 +83,13 @@ def gen_vessel_definition(stop_nums: tuple):
 
             self.reset()
 
-        def reset(self):
+        def reset(self) -> None:
             """Reset states of vessel."""
             self.capacity = self._capacity
             self.route_idx = self._route_idx
             self.empty = self._empty
 
-        def set_stop_list(self, past_stop_list: list, future_stop_list: list):
+        def set_stop_list(self, past_stop_list: list, future_stop_list: list) -> None:
             """Set the future stops (configured in config) when the vessel arrive at a port.
 
             Args:
@@ -110,16 +111,16 @@ def gen_vessel_definition(stop_nums: tuple):
                     feature[1][i] = port_idx
                     feature[2][i] = tick
 
-        def _on_empty_changed(self, value):
+        def _on_empty_changed(self, value: Any) -> None:
             self._update_remaining_space()
 
-        def _on_full_changed(self, value):
+        def _on_full_changed(self, value: Any) -> None:
             self._update_remaining_space()
 
-        def _update_remaining_space(self):
+        def _update_remaining_space(self) -> None:
             self.remaining_space = self._total_space - self.full - self.empty
 
-        def __str__(self):
+        def __str__(self) -> str:
             return f"<Vessel Index={self.index}, capacity={self.capacity}, empty={self.empty}, full={self.full}>"
 
     return Vessel

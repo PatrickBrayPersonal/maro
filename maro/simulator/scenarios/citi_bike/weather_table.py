@@ -1,7 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-from datetime import date
+from datetime import date, tzinfo
+from typing import Any, Optional
 
 from maro.data_lib.binary_reader import BinaryReader
 from maro.simulator.scenarios.helpers import utc_timestamp_to_timezone
@@ -24,10 +25,10 @@ class WeatherTable:
         timezone (object): Target timezone, used to convert timestamp from binary.
     """
 
-    def __init__(self, file: str, timezone):
+    def __init__(self, file: str, timezone: tzinfo = None) -> None:
         self._setup_in_memory_table(file, timezone)
 
-    def _setup_in_memory_table(self, file: str, timezone):
+    def _setup_in_memory_table(self, file: str, timezone: Optional[tzinfo]) -> None:
         reader = BinaryReader(file_path=file)
 
         self._weather_lut = {}
@@ -38,7 +39,7 @@ class WeatherTable:
 
             self._weather_lut[dt.date()] = item
 
-    def __getitem__(self, key: date):
+    def __getitem__(self, key: date) -> Optional[Any]:
         assert type(key) == date
 
         return self._weather_lut.get(key, None)

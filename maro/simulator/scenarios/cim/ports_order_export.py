@@ -3,25 +3,26 @@
 
 
 import csv
+from typing import Any
 
 
 class PortOrderExporter:
     """Utils used to export full's source and target."""
 
-    def __init__(self, enabled: bool = False):
+    def __init__(self, enabled: bool = False) -> None:
         self._enabled = enabled
-        self._orders = []
+        self._orders: list = []
 
-    def add(self, order):
+    def add(self, order: Any) -> None:
         """Add an order to export, it will be ignored if export is disabled.
 
         Args:
-            order (object): Order to export.
+            order (Any): Order to be exported.
         """
         if self._enabled:
             self._orders.append(order)
 
-    def dump(self, folder: str):
+    def dump(self, folder: str) -> None:
         """Dump current orders to csv.
 
         Args:

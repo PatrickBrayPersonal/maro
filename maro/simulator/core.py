@@ -4,7 +4,7 @@
 from collections.abc import Iterable
 from importlib import import_module
 from inspect import getmembers, isclass
-from typing import Generator, List, Optional, Tuple
+from typing import Any, Generator, List, Optional, Tuple, Union
 
 from maro.backends.frame import FrameBase, SnapshotList
 from maro.data_lib.dump_csv_converter import DumpConverter
@@ -14,6 +14,7 @@ from maro.utils.exception.simulator_exception import BusinessEngineNotFoundError
 
 from .abs_core import AbsEnv, DecisionMode
 from .scenarios.abs_business_engine import AbsBusinessEngine
+from .scenarios.helpers import DocableDict
 from .utils.common import tick_to_frame_index
 
 
@@ -33,7 +34,7 @@ class Env(AbsEnv):
         business_engine_cls (type): Class of business engine. If specified, use it to construct the be instance,
             or search internally by scenario.
         disable_finished_events (bool): Disable finished events list, with this set to True, EventBuffer will
-            re-use finished event object, this reduce event object number.
+            re-use finished event object, this reduces event object number.
         record_finished_events (bool): If record finished events into csv file, default is False.
         record_file_path (str): Where to save the recording file, only work if record_finished_events is True.
         options (dict): Additional parameters passed to business engine.
@@ -74,7 +75,7 @@ class Env(AbsEnv):
         self._event_buffer = EventBuffer(disable_finished_events, record_finished_events, record_file_path)
 
         # decision_events array for dump.
-        self._decision_events = []
+        self._decision_events: list = []
 
         # The generator used to push the simulator forward.
         self._simulate_generator = self._simulate()
@@ -89,7 +90,7 @@ class Env(AbsEnv):
 
         self._streamit_episode = 0
 
-    def step(self, action) -> Tuple[Optional[dict], Optional[List[object]], Optional[bool]]:
+    def step(self, action: Any) -> Tuple[Union[dict, DocableDict, None], Union[Any, list, None], Optional[bool]]:
         """Push the environment to next step with action.
 
         Args:
@@ -198,7 +199,7 @@ class Env(AbsEnv):
         self._business_engine.set_seed(seed)
 
     @property
-    def metrics(self) -> dict:
+    def metrics(self) -> Union[dict, DocableDict, None]:
         """Some statistics information provided by business engine.
 
         Returns:
@@ -211,7 +212,7 @@ class Env(AbsEnv):
         """List[Event]: All events finished so far."""
         return self._event_buffer.get_finished_events()
 
-    def get_pending_events(self, tick) -> List[ActualEvent]:
+    def get_pending_events(self, tick: int) -> List[ActualEvent]:
         """Pending events at certain tick.
 
         Args:
@@ -257,6 +258,7 @@ class Env(AbsEnv):
             if business_class is None:
                 raise BusinessEngineNotFoundError()
 
+        assert business_class is not None
         self._business_engine: AbsBusinessEngine = business_class(
             event_buffer=self._event_buffer,
             topology=self._topology,
@@ -267,10 +269,11 @@ class Env(AbsEnv):
             additional_options=self._additional_options,
         )
 
-    def _simulate(self) -> Generator[Tuple[dict, List[object], bool], object, None]:
+    def _simulate(self) -> Generator[Tuple[Union[dict, DocableDict], Union[Any, list, None], bool], Any, None]:
         """This is the generator to wrap each episode process."""
         self._streamit_episode += 1
 
+        assert streamit is not None
         streamit.episode(self._streamit_episode)
 
         while True:
@@ -292,10 +295,10 @@ class Env(AbsEnv):
                 self._business_engine.frame.take_snapshot(self.frame_index)
 
                 # Append source event id to decision events, to support sequential action in joint mode.
-                decision_events = [event.payload for event in pending_events]
-
                 decision_events = (
-                    decision_events[0] if self._decision_mode == DecisionMode.Sequential else decision_events
+                    pending_events[0].payload
+                    if self._decision_mode == DecisionMode.Sequential
+                    else [event.payload for event in pending_events]
                 )
 
                 # Yield current state first, and waiting for action.
@@ -308,6 +311,8 @@ class Env(AbsEnv):
                     actions = []
                 elif not isinstance(actions, Iterable):
                     actions = [actions]
+                else:
+                    actions = list(actions)
 
                 if self._decision_mode == DecisionMode.Sequential:
                     # Generate a new atom event first.

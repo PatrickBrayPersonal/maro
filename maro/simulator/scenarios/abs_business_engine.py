@@ -4,10 +4,11 @@
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from maro.backends.frame import FrameBase, SnapshotList
 from maro.event_buffer import EventBuffer
+from maro.simulator.scenarios.helpers import DocableDict
 from maro.simulator.utils.common import tick_to_frame_index, total_frames
 
 
@@ -45,16 +46,15 @@ class AbsBusinessEngine(ABC):
         snapshot_resolution: int,
         max_snapshots: Optional[int],
         additional_options: dict = None,
-    ):
-        self._scenario_name: str = scenario_name
-        self._topology: str = topology
-        self._event_buffer: EventBuffer = event_buffer
-        self._start_tick: int = start_tick
-        self._max_tick: int = max_tick
-        self._snapshot_resolution: int = snapshot_resolution
-        self._max_snapshots: int = max_snapshots
-        self._additional_options: dict = additional_options
-        self._config_path: Optional[str] = None
+    ) -> None:
+        self._scenario_name = scenario_name
+        self._topology = topology
+        self._event_buffer = event_buffer
+        self._start_tick = start_tick
+        self._max_tick = max_tick
+        self._snapshot_resolution = snapshot_resolution
+        self._max_snapshots = max_snapshots
+        self._additional_options = additional_options if additional_options is not None else {}
 
         assert start_tick >= 0
         assert max_tick > start_tick
@@ -219,7 +219,7 @@ class AbsBusinessEngine(ABC):
         """
         return {}
 
-    def get_metrics(self) -> dict:
+    def get_metrics(self) -> Union[dict, DocableDict]:
         """Get statistics information, may different for scenarios.
 
         Returns:

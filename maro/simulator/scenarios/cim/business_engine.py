@@ -4,7 +4,7 @@
 
 import os
 from math import ceil, floor
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
 from yaml import safe_load
@@ -14,7 +14,6 @@ from maro.data_lib.cim import CimDataContainerWrapper, Order, Stop
 from maro.event_buffer import AtomEvent, CascadeEvent, EventBuffer, MaroEvents
 from maro.simulator.scenarios import AbsBusinessEngine
 from maro.simulator.scenarios.helpers import DocableDict
-from maro.simulator.scenarios.matrix_accessor import MatrixAttributeAccessor
 from maro.streamit import streamit
 
 from .common import Action, ActionScope, ActionType, DecisionEvent
@@ -46,7 +45,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         snapshot_resolution: int,
         max_snapshots: Optional[int],
         additional_options: dict = None,
-    ):
+    ) -> None:
         super().__init__(
             "cim",
             event_buffer,
@@ -62,6 +61,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         self.update_config_root_path(__file__)
 
         # Load data from wrapper.
+        assert self._topology is not None
         self._data_cntr: CimDataContainerWrapper = CimDataContainerWrapper(
             self._config_path,
             max_tick,
@@ -75,18 +75,14 @@ class CimBusinessEngine(AbsBusinessEngine):
             with open(config_path) as fp:
                 self._config = safe_load(fp)
 
-        self._vessels = []
-        self._ports = []
-        self._frame: Optional[FrameBase] = None
-        self._full_on_ports: Optional[MatrixAttributeAccessor] = None
-        self._full_on_vessels: Optional[MatrixAttributeAccessor] = None
-        self._vessel_plans: Optional[MatrixAttributeAccessor] = None
-        self._port_orders_exporter = PortOrderExporter("enable-dump-snapshot" in additional_options)
+        self._vessels: list = []
+        self._ports: list = []
+        self._port_orders_exporter = PortOrderExporter("enable-dump-snapshot" in self._additional_options)
 
         self._load_cost_factor: float = self._data_cntr.load_cost_factor
         self._dsch_cost_factor: float = self._data_cntr.dsch_cost_factor
 
-        # Used to collect total cost to avoid to much snapshot querying.
+        # Used to collect total cost to avoid too much snapshot querying.
         self._total_operate_num: float = 0
 
         self._init_frame()
@@ -105,7 +101,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         self._stream_base_info()
 
     @property
-    def configs(self):
+    def configs(self) -> dict:
         """dict: Configurations of CIM business engine."""
         return self._config
 
@@ -119,7 +115,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         """SnapshotList: Snapshot list of current frame."""
         return self._snapshots
 
-    def step(self, tick: int):
+    def step(self, tick: int) -> None:
         """Called at each tick to generate orders and arrival events.
 
         Args:
@@ -198,7 +194,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         for event in decision_evt_list:
             self._event_buffer.insert_event(event)
 
-    def post_step(self, tick: int):
+    def post_step(self, tick: int) -> bool:
         """Post-process after each step.
 
         Args:
@@ -223,7 +219,7 @@ class CimBusinessEngine(AbsBusinessEngine):
 
         return tick + 1 == self._max_tick
 
-    def reset(self, keep_seed: bool = False):
+    def reset(self, keep_seed: bool = False) -> None:
         """Reset the business engine, it will reset frame value."""
 
         self._snapshots.reset()
@@ -315,10 +311,10 @@ class CimBusinessEngine(AbsBusinessEngine):
         """
         return [i for i in range(self._data_cntr.port_number)]
 
-    def dump(self, folder: str):
+    def dump(self, folder: str) -> None:
         self._port_orders_exporter.dump(folder)
 
-    def _init_nodes(self):
+    def _init_nodes(self) -> None:
         # Init ports.
         for port_settings in self._data_cntr.ports:
             port = self._ports[port_settings.index]
@@ -343,7 +339,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         # Init vessel plans.
         self._vessel_plans[:] = -1
 
-    def _reset_nodes(self):
+    def _reset_nodes(self) -> None:
         # Reset both vessels and ports.
         # NOTE: This should be called after frame.reset.
         for port in self._ports:
@@ -355,7 +351,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         # Reset vessel plans.
         self._vessel_plans[:] = -1
 
-    def _register_events(self):
+    def _register_events(self) -> None:
         """Register events."""
         register_handler = self._event_buffer.register_event_handler
 
@@ -368,7 +364,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         register_handler(Events.DISCHARGE_FULL, self._on_discharge)
         register_handler(MaroEvents.TAKE_ACTION, self._on_action_received)
 
-    def _load_departure_events(self):
+    def _load_departure_events(self) -> None:
         """Insert leaving event at the beginning as we already unpack the root to a loop at the beginning."""
 
         for vessel_idx, stops in enumerate(self._data_cntr.vessel_stops[:]):
@@ -378,7 +374,7 @@ class CimBusinessEngine(AbsBusinessEngine):
 
                 self._event_buffer.insert_event(dep_evt)
 
-    def _init_vessel_plans(self):
+    def _init_vessel_plans(self) -> None:
         for vessel in self._vessels:
             vessel.is_parking = 1 if vessel.last_loc_idx == vessel.next_loc_idx else 0
             stop: Stop = self._data_cntr.vessel_stops[vessel.idx, vessel.last_loc_idx]
@@ -397,7 +393,7 @@ class CimBusinessEngine(AbsBusinessEngine):
             ]:
                 self._vessel_plans[vessel.idx, plan_port_idx] = plan_tick
 
-    def _init_frame(self):
+    def _init_frame(self) -> None:
         """Initialize the frame based on data generator."""
         port_num = self._data_cntr.port_number
         vessel_num = self._data_cntr.vessel_number
@@ -422,7 +418,7 @@ class CimBusinessEngine(AbsBusinessEngine):
 
         self._init_nodes()
 
-    def _get_reachable_ports(self, vessel_idx: int):
+    def _get_reachable_ports(self, vessel_idx: int) -> List[Tuple[int, int]]:
         """Get ports that specified vessel can reach (for order), return a list of tuple (port_id, arrival_tick).
 
         Args:
@@ -435,17 +431,17 @@ class CimBusinessEngine(AbsBusinessEngine):
 
         return self._data_cntr.reachable_stops[vessel_idx, vessel.route_idx, vessel.next_loc_idx]
 
-    def _get_pending_full(self, src_port_idx: int, dest_port_idx: int):
+    def _get_pending_full(self, src_port_idx: int, dest_port_idx: int) -> int:
         """Get pending full number from src_port_idx to dest_port_idx."""
         return self._full_on_ports[src_port_idx, dest_port_idx]
 
-    def _set_pending_full(self, src_port_idx: int, dest_port_idx: int, value):
+    def _set_pending_full(self, src_port_idx: int, dest_port_idx: int, value: int) -> None:
         """Set the full number from src_port_idx to dest_port_idx."""
         assert value >= 0
 
         self._full_on_ports[src_port_idx, dest_port_idx] = value
 
-    def _on_order_generated(self, event: CascadeEvent):
+    def _on_order_generated(self, event: CascadeEvent) -> None:
         """When there is an order generated, we should do:
         1. Generate a LADEN_RETURN event by configured buffer time: \
         The event will be inserted to the immediate_event_list ASAP if the configured buffer time is 0, \
@@ -496,7 +492,7 @@ class CimBusinessEngine(AbsBusinessEngine):
             laden_return_evt,
         )
 
-    def _on_full_return(self, event: AtomEvent):
+    def _on_full_return(self, event: AtomEvent) -> None:
         """Handler for processing the event that full containers are returned from shipper.
 
         Once the full containers are returned, the containers are ready to be loaded. The workflow is:
@@ -521,7 +517,7 @@ class CimBusinessEngine(AbsBusinessEngine):
             pending_full_number + payload.quantity,
         )
 
-    def _on_full_load(self, event: AtomEvent):
+    def _on_full_load(self, event: AtomEvent) -> None:
         """Handler for processing event that a vessel need to load full containers from current port.
 
         When there is a vessel arrive at a port:
@@ -597,7 +593,7 @@ class CimBusinessEngine(AbsBusinessEngine):
             port.empty += early_discharge_number
             vessel.early_discharge = early_discharge_number
 
-    def _on_arrival(self, event: AtomEvent):
+    def _on_arrival(self, event: AtomEvent) -> None:
         """Handler for processing event when there is a vessel arriving at the port.
 
         When the vessel arriving at the port:
@@ -631,7 +627,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         ]:
             self._vessel_plans[vessel_idx, plan_port_idx] = plan_tick
 
-    def _on_departure(self, event: AtomEvent):
+    def _on_departure(self, event: AtomEvent) -> None:
         """Handler for processing event when there is a vessel leaving from port.
 
         When the vessel departing from port:
@@ -655,7 +651,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         past_stops = self._data_cntr.vessel_past_stops[vessel.idx, vessel.last_loc_idx, vessel.next_loc_idx]
         vessel.set_stop_list(past_stops, None)
 
-    def _on_discharge(self, event: CascadeEvent):
+    def _on_discharge(self, event: CascadeEvent) -> None:
         """Handler for processing event the there are some full need to be discharged.
 
 
@@ -692,7 +688,7 @@ class CimBusinessEngine(AbsBusinessEngine):
             mt_return_evt,
         )
 
-    def _on_empty_return(self, event: AtomEvent):
+    def _on_empty_return(self, event: AtomEvent) -> None:
         """Handler for processing event when there are some empty container return to port.
 
         Args:
@@ -705,7 +701,7 @@ class CimBusinessEngine(AbsBusinessEngine):
         port.on_consignee -= payload.quantity
         port.empty += payload.quantity
 
-    def _on_action_received(self, event: CascadeEvent):
+    def _on_action_received(self, event: CascadeEvent) -> None:
         """Handler for processing actions from agent.
 
         Args:
@@ -747,12 +743,12 @@ class CimBusinessEngine(AbsBusinessEngine):
 
                 self._vessel_plans[vessel_idx, port_idx] += self._data_cntr.vessel_period[vessel_idx]
 
-    def _stream_base_info(self):
+    def _stream_base_info(self) -> None:
         if streamit:
             streamit.info(self._scenario_name, self._topology, self._max_tick)
             streamit.complex("config", self._config)
 
-    def _stream_data(self):
+    def _stream_data(self) -> None:
         if streamit:
             port_number = len(self._ports)
             vessel_number = len(self._vessels)

@@ -398,7 +398,7 @@ class VmSchedulingBusinessEngine(AbsBusinessEngine):
 
         return start_pm_id
 
-    def reset(self, keep_seed: bool = False):
+    def reset(self, keep_seed: bool = False) -> None:
         """Reset internal states for episode."""
         self._init_metrics()
 
@@ -446,7 +446,7 @@ class VmSchedulingBusinessEngine(AbsBusinessEngine):
         )
         self._snapshots = self._frame.snapshots
 
-    def step(self, tick: int):
+    def step(self, tick: int) -> None:
         """Push business to next step.
 
         Args:

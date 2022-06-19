@@ -1,11 +1,12 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
+from typing import Any
 
 from maro.backends.frame import NodeAttribute, NodeBase, node
 from maro.simulator.scenarios.matrix_accessor import MatrixAttributeAccessor
 
 
-def gen_matrix(port_num: int, vessel_num: int):
+def gen_matrix(port_num: int, vessel_num: int) -> Any:
     """A node that contains matrix in frame.
 
     Args:
@@ -27,7 +28,7 @@ def gen_matrix(port_num: int, vessel_num: int):
         # planned route info for vessels
         vessel_plans = NodeAttribute("i", slot_num=vessel_num * port_num)
 
-        def __init__(self):
+        def __init__(self) -> None:
             # we cannot create matrix accessor here, since the attributes will be bind after frame setup,
             self._acc_dict = {
                 "full_on_ports": MatrixAttributeAccessor(self, "full_on_ports", port_num, port_num),
@@ -35,7 +36,7 @@ def gen_matrix(port_num: int, vessel_num: int):
                 "vessel_plans": MatrixAttributeAccessor(self, "vessel_plans", vessel_num, port_num),
             }
 
-        def __getitem__(self, key):
+        def __getitem__(self, key: Any) -> Any:
             return self._acc_dict.get(key, None)
 
     return GeneralInfoMatrix

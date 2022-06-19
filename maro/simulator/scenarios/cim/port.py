@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
+from typing import Optional
 
 from maro.backends.frame import NodeAttribute, NodeBase, node
 
@@ -45,10 +46,10 @@ class Port(NodeBase):
     # Cost of transferring container, which also covers loading and discharging cost.
     transfer_cost = NodeAttribute("f")
 
-    def __init__(self):
-        self._name = None
-        self._capacity = None
-        self._empty = None
+    def __init__(self) -> None:
+        self._name: Optional[str] = None
+        self._capacity: Optional[int] = None
+        self._empty: Optional[int] = None
 
     @property
     def idx(self) -> int:
@@ -56,11 +57,11 @@ class Port(NodeBase):
         return self.index
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         """str: Name of this port."""
         return self._name
 
-    def set_init_state(self, name: str, capacity: int, empty: int):
+    def set_init_state(self, name: str, capacity: int, empty: int) -> None:
         """Set initialize state for port, business engine will use these values to reset
         port at the end of each episode (reset).
 
@@ -75,7 +76,7 @@ class Port(NodeBase):
 
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset port state to initializing.
 
         Note:
@@ -85,16 +86,16 @@ class Port(NodeBase):
         self.capacity = self._capacity
         self.empty = self._empty
 
-    def _on_shortage_changed(self, value):
+    def _on_shortage_changed(self, value: int) -> None:
         self._update_fulfilment(value, self.booking)
 
-    def _on_booking_changed(self, value):
+    def _on_booking_changed(self, value: int) -> None:
         self._update_fulfilment(self.shortage, value)
 
-    def _update_fulfilment(self, shortage: int, booking: int):
+    def _update_fulfilment(self, shortage: int, booking: int) -> None:
         # Update fulfillment.
 
         self.fulfillment = booking - shortage
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<Port index={self.index}, name={self._name}, capacity={self.capacity}, empty={self.empty}>"

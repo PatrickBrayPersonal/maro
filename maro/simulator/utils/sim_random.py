@@ -26,13 +26,13 @@ class SimRandom:
         seed(1)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # random object instances
         self._rand_instances: Dict[str, Random] = OrderedDict()
         self._seed_dict: Dict[str, int] = {}
         self._seed = int(time.time())
 
-    def seed(self, seed_num: int):
+    def seed(self, seed_num: int) -> None:
         """Set seed for simulator random objects.
 
         NOTE:
@@ -62,8 +62,8 @@ class SimRandom:
             r.seed(self._seed_dict[key])
             self._rand_instances[key] = r
 
-    def __getitem__(self, key):
-        assert type(key) is str
+    def __getitem__(self, key: str) -> Random:
+        assert isinstance(key, str)
 
         if key not in self._rand_instances:
             self.create_instance(key)

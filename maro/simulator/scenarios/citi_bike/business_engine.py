@@ -99,7 +99,7 @@ class CitibikeBusinessEngine(AbsBusinessEngine):
         """dict: Current configuration."""
         return self._conf
 
-    def step(self, tick: int):
+    def step(self, tick: int) -> None:
         """Push business engine to next step.
 
         Args:
@@ -163,7 +163,7 @@ class CitibikeBusinessEngine(AbsBusinessEngine):
             CitiBikeEvents.DeliverBike.name: BikeTransferPayload.summary_key,
         }
 
-    def reset(self, keep_seed: bool = False):
+    def reset(self, keep_seed: bool = False) -> None:
         """Reset internal states for episode."""
         self._total_trips = 0
         self._total_operate_num = 0

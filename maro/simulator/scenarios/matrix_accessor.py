@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
+from typing import Any
 
 from maro.backends.frame import NodeBase
 
@@ -14,7 +15,7 @@ class MatrixAttributeAccessor:
         col_num(int): Result matrix column number.
     """
 
-    def __init__(self, node: NodeBase, attribute: str, row_num: int, col_num: int):
+    def __init__(self, node: NodeBase, attribute: str, row_num: int, col_num: int) -> None:
         self._node = node
         self._attr = None
         self._attr_name = attribute
@@ -31,17 +32,16 @@ class MatrixAttributeAccessor:
         """int: Row number."""
         return self._row_num
 
-    def _ensure_attr(self):
+    def _ensure_attr(self) -> None:
         """Ensure that the attribute instance correct"""
         if self._attr is None:
             self._attr = getattr(self._node, self._attr_name, None)
 
-        assert self._attr is not None
-
-    def __getitem__(self, item: tuple):
+    def __getitem__(self, item: tuple) -> Any:
         key_type = type(item)
 
         self._ensure_attr()
+        assert self._attr is not None
 
         if key_type == tuple:
             row_idx = item[0]
@@ -51,10 +51,11 @@ class MatrixAttributeAccessor:
         elif key_type == slice:
             return self._attr[:]
 
-    def __setitem__(self, key: tuple, value: int):
+    def __setitem__(self, key: tuple, value: int) -> None:
         key_type = type(key)
 
         self._ensure_attr()
+        assert self._attr is not None
 
         if key_type == tuple:
             row_idx = key[0]
@@ -75,11 +76,12 @@ class MatrixAttributeAccessor:
             list: List of value for that row.
         """
         self._ensure_attr()
+        assert self._attr is not None
 
         start = self._col_num * row_idx
         return self._attr[start : start + self._col_num]
 
-    def get_column(self, column_idx: int):
+    def get_column(self, column_idx: int) -> list:
         """Get values of a column.
 
         Args:
@@ -89,6 +91,7 @@ class MatrixAttributeAccessor:
             list: List of value for that column.
         """
         self._ensure_attr()
+        assert self._attr is not None
 
         row_indices = [r * self._col_num + column_idx for r in range(self._row_num)]
 

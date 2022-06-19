@@ -8,7 +8,7 @@ from .port import Port
 from .vessel import gen_vessel_definition
 
 
-def gen_cim_frame(port_num: int, vessel_num: int, stop_nums: tuple, snapshots_num: int):
+def gen_cim_frame(port_num: int, vessel_num: int, stop_nums: tuple, snapshots_num: int) -> FrameBase:
     """Define and generate cim frame.
 
     Args:
@@ -27,7 +27,7 @@ def gen_cim_frame(port_num: int, vessel_num: int, stop_nums: tuple, snapshots_nu
         ports = FrameNode(Port, port_num)
         matrix = FrameNode(matrix_cls, 1)
 
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__(enable_snapshot=True, total_snapshot=snapshots_num)
 
     return CimFrame()

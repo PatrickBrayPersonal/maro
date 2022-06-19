@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 from datetime import datetime
+from typing import Any
 
 from maro.data_lib import BinaryReader
 from maro.event_buffer import EventBuffer
@@ -64,11 +65,11 @@ class EventBindBinaryReader:
         event_buffer: EventBuffer,
         binary_file_path: str,
         start_tick: int = 0,
-        end_tick=100,
+        end_tick: int = 100,
         time_unit: str = "s",
         buffer_size: int = 100,
         enable_value_adjust: bool = False,
-    ):
+    ) -> None:
 
         self._reader = BinaryReader(
             file_path=binary_file_path,
@@ -106,7 +107,7 @@ class EventBindBinaryReader:
         """tuple: Header in binary file."""
         return self._reader.header
 
-    def read_items(self, tick: int):
+    def read_items(self, tick: int) -> None:
         """Read items by tick and generate related events, then insert them into EventBuffer.
 
         Args:
@@ -116,9 +117,7 @@ class EventBindBinaryReader:
             for item in self._picker.items(tick):
                 self._gen_event_by_item(item, tick)
 
-        return None
-
-    def reset(self):
+    def reset(self) -> None:
         """Reset states of reader."""
         self._reader.reset()
         self._picker = self._reader.items_tick_picker(
@@ -127,9 +126,7 @@ class EventBindBinaryReader:
             time_unit=self._time_unit,
         )
 
-    def _gen_event_by_item(self, item, tick):
-        event_name = None
-
+    def _gen_event_by_item(self, item: Any, tick: int) -> None:
         if self._event_field_name is None and self._default_event is not None:
             # used default event name to gen event
             event_name = self._event_cls(self._default_event)
@@ -144,7 +141,7 @@ class EventBindBinaryReader:
 
         self._event_buffer.insert_event(evt)
 
-    def _init_meta(self):
+    def _init_meta(self) -> None:
         meta = self._reader.meta
 
         # default event display name

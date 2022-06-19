@@ -10,7 +10,7 @@ topologies_folder = "topologies"
 scenarios_root_folder = os.path.join(os.path.split(os.path.realpath(__file__))[0], "../scenarios")
 
 
-def get_available_envs():
+def get_available_envs() -> List[dict]:
     """Get available built-in scenarios and their topologies.
 
     Returns:

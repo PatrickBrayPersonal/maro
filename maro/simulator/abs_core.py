@@ -4,11 +4,11 @@
 
 from abc import ABC, abstractmethod
 from enum import IntEnum
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 from maro.backends.frame import SnapshotList
-from maro.event_buffer import EventBuffer
 from maro.simulator.scenarios.abs_business_engine import AbsBusinessEngine
+from maro.simulator.scenarios.helpers import DocableDict
 
 
 class DecisionMode(IntEnum):
@@ -26,53 +26,53 @@ class AbsEnv(ABC):
     """The main MARO simulator abstract class, which provides interfaces to agents.
 
     Args:
-        scenario (str): Scenario name under maro/simulator/scenarios folder.
-        topology (str): Topology name under specified scenario folder.
+        scenario (Optional[str]): Scenario name under maro/simulator/scenarios folder.
+        topology (Optional[str]): Topology name under specified scenario folder.
         start_tick (int): Start tick of the scenario, usually used for pre-processed data streaming.
         durations (int): Duration ticks of this environment from start_tick.
         snapshot_resolution (int): How many ticks will take a snapshot.
-        max_snapshots (int): Max in-memory snapshot number, less snapshots lower memory cost.
-        business_engine_cls(type): Class of business engine, if specified, then use it to construct be instance,
-            or will search internal by scenario.
+        max_snapshots (Optional[int]): Max in-memory snapshot number, less snapshots lower memory cost.
+        business_engine_cls(Optional[type]): Class of business engine, if specified, then use it to construct be
+            instance, or will search internal by scenario.
         disable_finished_events (bool): Disable finished events list, with this set to True, EventBuffer will
-            re-use finished event object, this reduce event object number.
+            re-use finished event object, this reduces event object number.
         options (dict): Additional parameters passed to business engine.
     """
 
     def __init__(
         self,
-        scenario: str,
-        topology: str,
+        scenario: Optional[str],
+        topology: Optional[str],
         start_tick: int,
         durations: int,
         snapshot_resolution: int,
-        max_snapshots: int,
+        max_snapshots: Optional[int],
         decision_mode: DecisionMode,
-        business_engine_cls: type,
+        business_engine_cls: Optional[type],
         disable_finished_events: bool,
         options: dict,
-    ):
-        self._tick: int = start_tick
-        self._scenario: str = scenario
-        self._topology: str = topology
-        self._start_tick: int = start_tick
-        self._durations: int = durations
-        self._snapshot_resolution: int = snapshot_resolution
-        self._max_snapshots: int = max_snapshots
-        self._decision_mode: DecisionMode = decision_mode
-        self._business_engine_cls: type = business_engine_cls
-        self._disable_finished_events: bool = disable_finished_events
-        self._additional_options: dict = options
+    ) -> None:
+        self._tick = start_tick
+        self._scenario = scenario
+        self._topology = topology
+        self._start_tick = start_tick
+        self._durations = durations
+        self._snapshot_resolution = snapshot_resolution
+        self._max_snapshots = max_snapshots
+        self._decision_mode = decision_mode
+        self._business_engine_cls = business_engine_cls
+        self._disable_finished_events = disable_finished_events
+        self._additional_options = options
 
         self._business_engine: Optional[AbsBusinessEngine] = None
-        self._event_buffer: Optional[EventBuffer] = None
 
     @property
     def business_engine(self) -> AbsBusinessEngine:
+        assert self._business_engine is not None
         return self._business_engine
 
     @abstractmethod
-    def step(self, action) -> Tuple[Optional[dict], Optional[List[object]], Optional[bool]]:
+    def step(self, action: Any) -> Tuple[Union[dict, DocableDict, None], Union[Any, list, None], Optional[bool]]:
         """Push the environment to next step with action.
 
         Args:
@@ -146,7 +146,7 @@ class AbsEnv(ABC):
         """
 
     @property
-    def metrics(self) -> dict:
+    def metrics(self) -> Union[dict, DocableDict, None]:
         """Some statistics information provided by business engine.
 
         Returns:

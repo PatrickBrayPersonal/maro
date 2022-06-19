@@ -3,7 +3,8 @@
 
 import sys
 import warnings
-from datetime import datetime
+from datetime import datetime, tzinfo
+from typing import Any, Optional
 
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import UTC
@@ -11,8 +12,8 @@ from dateutil.tz import UTC
 timestamp_start = datetime(1970, 1, 1, 0, 0, 0, tzinfo=UTC)
 
 
-def utc_timestamp_to_timezone(timestamp: int, timezone):
-    """Convert utc timestamp into specified tiemzone datetime.
+def utc_timestamp_to_timezone(timestamp: int, timezone: Optional[tzinfo]) -> datetime:
+    """Convert utc timestamp into specified timezone datetime.
 
     Args:
         timestamp(int): UTC timestamp to convert.
@@ -33,30 +34,30 @@ class DocableDict:
         origin_dict (dict): Dictionary items to store.
     """
 
-    def __init__(self, doc: str, origin_dict: dict):
+    def __init__(self, doc: str, origin_dict: dict) -> None:
         self._original_dict = origin_dict
         DocableDict.__doc__ = doc
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return getattr(self._original_dict, name, None)
 
-    def __getitem__(self, k):
+    def __getitem__(self, k: str) -> Any:
         return self._original_dict[k]
 
-    def __setitem__(self, k, v):
+    def __setitem__(self, k: str, v: Any) -> None:
         warnings.warn("Do not support add new key")
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         return self.__dict__
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict) -> None:
         self.__dict__.update(state)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self._original_dict.__repr__()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__repr__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._original_dict)

@@ -12,12 +12,12 @@ class VesselStatePayload:
 
     summary_key = ["port_idx", "vessel_idx"]
 
-    def __init__(self, port_idx: int, vessel_idx: int):
+    def __init__(self, port_idx: int, vessel_idx: int) -> None:
 
         self.port_idx = port_idx
         self.vessel_idx = vessel_idx
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%s {port_idx: %r, vessel_idx:%r}" % (self.__class__.__name__, self.port_idx, self.vessel_idx)
 
 
@@ -33,13 +33,13 @@ class VesselDischargePayload:
 
     summary_key = ["vessel_idx", "port_idx", "from_port_idx", "quantity"]
 
-    def __init__(self, vessel_idx: int, from_port_idx: int, port_idx: int, quantity: int):
+    def __init__(self, vessel_idx: int, from_port_idx: int, port_idx: int, quantity: int) -> None:
         self.vessel_idx = vessel_idx
         self.from_port_idx = from_port_idx
         self.port_idx = port_idx
         self.quantity = int(quantity)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%s {port_idx: %r, vessel_idx: %r, quantity: %r, from_port_idx: %r}" % (
             self.__class__.__name__,
             self.port_idx,
@@ -60,12 +60,12 @@ class LadenReturnPayload:
 
     summary_key = ["src_port_idx", "dest_port_idx", "quantity"]
 
-    def __init__(self, src_port_idx: int, dest_port_idx: int, quantity: int):
+    def __init__(self, src_port_idx: int, dest_port_idx: int, quantity: int) -> None:
         self.src_port_idx = src_port_idx
         self.dest_port_idx = dest_port_idx
         self.quantity = int(quantity)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%s {src_port_idx: %r, dest_port_idx: %r, quantity:%r}" % (
             self.__class__.__name__,
             self.src_port_idx,
@@ -84,9 +84,9 @@ class EmptyReturnPayload:
 
     summary_key = ["port_idx", "quantity"]
 
-    def __init__(self, port_idx: int, quantity: int):
+    def __init__(self, port_idx: int, quantity: int) -> None:
         self.port_idx = port_idx
         self.quantity = int(quantity)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%s {port_idx: %r, quantity: %r}" % (self.__class__.__name__, self.port_idx, self.quantity)

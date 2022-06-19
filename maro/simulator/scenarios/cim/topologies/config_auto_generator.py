@@ -18,17 +18,17 @@ ORDER_NOISE = 0.002
 PERIOD = 112
 
 
-def generate_noise(value, min_prop, max_prop):
+def generate_noise(value: float, min_prop: float, max_prop: float) -> float:
     return value * random.uniform(min_prop, max_prop)
 
 
-def save_new_topology(src: str):
+def save_new_topology(src: str) -> None:
     src_dir = src + "_l0.0/config.yml"
     with open(src_dir, "r") as f:
         src_dict = yaml.safe_load(f)
     src_png_path = src + "_l0.0/topology.png"
 
-    def save_new_level(level: int, config_dict: dict):
+    def save_new_level(level: int, config_dict: dict) -> None:
         change_vessel_capacity(level)
         new_dict = src + "_l0." + str(level)
         os.makedirs(new_dict, exist_ok=True)
@@ -39,7 +39,7 @@ def save_new_topology(src: str):
         if os.path.exists(src_png_path):
             shutil.copyfile(src_png_path, new_dict + "/topology.png")
 
-    def change_vessel_capacity(level):
+    def change_vessel_capacity(level: int) -> None:
         for vessel in src_dict["vessels"].values():
             route_proportion = route_proportions[vessel["route"]["route_name"]]
             vessel["capacity"] = int(
