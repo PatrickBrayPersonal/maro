@@ -34,7 +34,7 @@ class MyActorNet(DiscreteACBasedNet):
         self._optim = Adam(self._actor.parameters(), lr=actor_learning_rate)
 
     def _get_action_probs_impl(self, states: torch.Tensor) -> torch.Tensor:
-        return self._actor(states.float())
+        return self._actor(states)
 
 
 class MyCriticNet(VNet):
